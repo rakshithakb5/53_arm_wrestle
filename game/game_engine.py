@@ -18,7 +18,15 @@ class GameEngine:
         
         self.winner = None
         self.game_state = "PLAYING"
-        self.ai_strength = 0.35  
+        self.ai_strength = 0.35
+
+        # Task 2: AI surge cycle  BUILDING -> SURGING -> EXHAUSTED -> BUILDING
+        self.ai_state = "BUILDING"
+        self.ai_state_start = pygame.time.get_ticks()
+        self.ai_build_ms = 4000
+        self.ai_surge_ms = 1500
+        self.ai_exhaust_ms = 2000
+        self.ai_multipliers = {"BUILDING": 1.0, "SURGING": 2.5, "EXHAUSTED": 0.3}
         
         self.font_big = pygame.font.SysFont(None, 44)
         self.font_med = pygame.font.SysFont(None, 26)
@@ -30,7 +38,7 @@ class GameEngine:
             return
 
         if event.type == pygame.KEYDOWN:
-            if self.stamina <= 10:
+            if self.stamina < 10:
                 return
                 
             if event.key == pygame.K_LEFT:
@@ -43,15 +51,27 @@ class GameEngine:
                     self.arm_position -= 4.2
                     self.stamina = max(0.0, self.stamina - 2.0)
                     self.last_key = pygame.K_RIGHT
+
     def update(self):
         if self.game_state != "PLAYING":
             return
 
+        # Task 2: advance the AI surge state machine using real elapsed time
+        now = pygame.time.get_ticks()
+        elapsed = now - self.ai_state_start
+        if self.ai_state == "BUILDING" and elapsed >= self.ai_build_ms:
+            self.ai_state, self.ai_state_start = "SURGING", now
+        elif self.ai_state == "SURGING" and elapsed >= self.ai_surge_ms:
+            self.ai_state, self.ai_state_start = "EXHAUSTED", now
+        elif self.ai_state == "EXHAUSTED" and elapsed >= self.ai_exhaust_ms:
+            self.ai_state, self.ai_state_start = "BUILDING", now
+
         ai_variance = random.uniform(0.3, 1.0)
-        self.arm_position += self.ai_strength * ai_variance
+        multiplier = self.ai_multipliers[self.ai_state]
+        self.arm_position += self.ai_strength * ai_variance * multiplier
 
         if self.stamina < self.max_stamina:
-            self.stamina = min(self.max_stamina, self.stamina + 0.8)
+            self.stamina = min(self.max_stamina, self.stamina + 0.08)
 
         if self.arm_position <= -self.target_limit:
             self.winner = "PLAYER"
@@ -66,6 +86,8 @@ class GameEngine:
         self.last_key = None
         self.winner = None
         self.game_state = "PLAYING"
+        self.ai_state = "BUILDING"
+        self.ai_state_start = pygame.time.get_ticks()
 
     def render(self, screen):
         screen.fill((25, 28, 35))
@@ -77,6 +99,14 @@ class GameEngine:
         computer_header = self.font_med.render("COMPUTER", True, (255, 100, 80))
         screen.blit(player_header, (60, 55))
         screen.blit(computer_header, (self.width - 150, 55))
+
+        # Task 2: show the AI's current state under its header
+        if self.ai_state == "SURGING":
+            tag = self.font_med.render("SURGE!", True, (255, 200, 60))
+            screen.blit(tag, (self.width - 150, 80))
+        elif self.ai_state == "EXHAUSTED":
+            tag = self.font_med.render("tired...", True, (150, 150, 170))
+            screen.blit(tag, (self.width - 150, 80))
 
         table_rect = pygame.Rect(40, 100, self.width - 80, 310)
         pygame.draw.rect(screen, (110, 50, 15), table_rect, border_radius=14)
