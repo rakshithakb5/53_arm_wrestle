@@ -88,3 +88,7 @@ Submission is only the following three things:
 - [] A 10-second video of gameplay **before** your changes, showing the bug/broken behavior
 - [] A 10-second video of gameplay **after** your changes, showing the bug fixed and the new features working
 - [] The Chat/LLM used page link, with the complete chat history
+
+here's the link to the submission folder: 
+
+https://drive.google.com/drive/folders/1U_XGF03mbbQs-RRbaWdd-Iv2Ic0FqSwk?usp=drive_link
