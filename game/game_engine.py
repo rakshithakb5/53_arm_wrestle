@@ -25,6 +25,11 @@ class GameEngine:
         self.game_state = "PLAYING"
         self.ai_strength = 0.35
 
+#timer: 
+        self.match_start = pygame.time.get_ticks()
+        self.match_time_ms = 0
+
+
         # Task 2: AI surge cycle  BUILDING -> SURGING -> EXHAUSTED -> BUILDING
         self.ai_state = "BUILDING"
         self.ai_state_start = pygame.time.get_ticks()
@@ -63,6 +68,11 @@ class GameEngine:
 
         # Task 2: advance the AI surge state machine using real elapsed time
         now = pygame.time.get_ticks()
+
+        #timer:
+        self.match_time_ms = now - self.match_start
+
+
         elapsed = now - self.ai_state_start
         if self.ai_state == "BUILDING" and elapsed >= self.ai_build_ms:
             self.ai_state, self.ai_state_start = "SURGING", now
@@ -76,7 +86,7 @@ class GameEngine:
         self.arm_position += self.ai_strength * ai_variance * multiplier
 
         if self.stamina < self.max_stamina:
-            self.stamina = min(self.max_stamina, self.stamina + 0.5)
+            self.stamina = min(self.max_stamina, self.stamina + 0.45)
 
         # Task 3: lock input below 10, unlock once stamina recovers to 30
         if self.stamina < self.exhaust_threshold:
@@ -100,9 +110,20 @@ class GameEngine:
         self.exhausted = False
         self.ai_state = "BUILDING"
         self.ai_state_start = pygame.time.get_ticks()
+        #timer:
+        self.match_start = pygame.time.get_ticks()
+        self.match_time_ms = 0
 
     def render(self, screen):
         screen.fill((25, 28, 35))
+
+#timer:
+        timer_surf = self.font_med.render(
+            f"TIME: {self.match_time_ms / 1000:.1f}s", True, (240, 240, 240)
+        )
+        screen.blit(timer_surf, (self.width // 2 - timer_surf.get_width() // 2, 58))
+
+
 
         title_surf = self.font_big.render("ARM WRESTLE SHOWDOWN", True, (240, 240, 240))
         screen.blit(title_surf, (self.width // 2 - title_surf.get_width() // 2, 12))
@@ -112,6 +133,15 @@ class GameEngine:
         screen.blit(player_header, (60, 55))
         screen.blit(computer_header, (self.width - 150, 55))
 
+
+#timer:
+        final_surf = self.font_med.render(
+         f"Match time: {self.match_time_ms / 1000:.1f}s", True, (200, 200, 200)
+        )
+        screen.blit(
+            final_surf,
+            (self.width // 2 - final_surf.get_width() // 2, self.height // 2 + 45)
+        )
         # Task 2: show the AI's current state under its header
         if self.ai_state == "SURGING":
             tag = self.font_med.render("SURGE!", True, (255, 200, 60))
