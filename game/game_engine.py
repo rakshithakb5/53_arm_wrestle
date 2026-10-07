@@ -26,7 +26,7 @@ class GameEngine:
         self.ai_build_ms = 4000
         self.ai_surge_ms = 1500
         self.ai_exhaust_ms = 2000
-        self.ai_multipliers = {"BUILDING": 1.0, "SURGING": 2.5, "EXHAUSTED": 0.3}
+        self.ai_multipliers = {"BUILDING": 1.0, "SURGING": 2.0, "EXHAUSTED": 0.3}
         
         self.font_big = pygame.font.SysFont(None, 44)
         self.font_med = pygame.font.SysFont(None, 26)
@@ -71,7 +71,7 @@ class GameEngine:
         self.arm_position += self.ai_strength * ai_variance * multiplier
 
         if self.stamina < self.max_stamina:
-            self.stamina = min(self.max_stamina, self.stamina + 0.08)
+            self.stamina = min(self.max_stamina, self.stamina + 0.3)
 
         if self.arm_position <= -self.target_limit:
             self.winner = "PLAYER"
