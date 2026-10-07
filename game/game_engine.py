@@ -15,6 +15,11 @@ class GameEngine:
         
         self.stamina = 100.0
         self.max_stamina = 100.0
+
+        # Task 3: exhaustion lockout (locks below 10, unlocks once stamina reaches 30)
+        self.exhausted = False
+        self.exhaust_threshold = 10.0
+        self.recover_threshold = 30.0
         
         self.winner = None
         self.game_state = "PLAYING"
@@ -38,18 +43,18 @@ class GameEngine:
             return
 
         if event.type == pygame.KEYDOWN:
-            if self.stamina < 10:
+            if self.exhausted:
                 return
                 
             if event.key == pygame.K_LEFT:
                 if self.last_key != pygame.K_LEFT: 
                     self.arm_position -= 4.2
-                    self.stamina = max(0.0, self.stamina - 2.0)
+                    self.stamina = max(0.0, self.stamina - 6.0)
                     self.last_key = pygame.K_LEFT
             elif event.key == pygame.K_RIGHT:
                 if self.last_key != pygame.K_RIGHT: 
                     self.arm_position -= 4.2
-                    self.stamina = max(0.0, self.stamina - 2.0)
+                    self.stamina = max(0.0, self.stamina - 6.0)
                     self.last_key = pygame.K_RIGHT
 
     def update(self):
@@ -71,7 +76,13 @@ class GameEngine:
         self.arm_position += self.ai_strength * ai_variance * multiplier
 
         if self.stamina < self.max_stamina:
-            self.stamina = min(self.max_stamina, self.stamina + 0.3)
+            self.stamina = min(self.max_stamina, self.stamina + 0.5)
+
+        # Task 3: lock input below 10, unlock once stamina recovers to 30
+        if self.stamina < self.exhaust_threshold:
+            self.exhausted = True
+        elif self.exhausted and self.stamina >= self.recover_threshold:
+            self.exhausted = False
 
         if self.arm_position <= -self.target_limit:
             self.winner = "PLAYER"
@@ -86,6 +97,7 @@ class GameEngine:
         self.last_key = None
         self.winner = None
         self.game_state = "PLAYING"
+        self.exhausted = False
         self.ai_state = "BUILDING"
         self.ai_state_start = pygame.time.get_ticks()
 
@@ -118,6 +130,11 @@ class GameEngine:
         hand_x = (self.width // 2) + int(offset_x)
         hand_y = 235
 
+        # Task 3: arm trembles while exhausted
+        if self.exhausted:
+            hand_x += random.randint(-4, 4)
+            hand_y += random.randint(-4, 4)
+
         p_shoulder = (70, 330)
         p_elbow = (140, 215)
         c_shoulder = (self.width - 70, 330)
@@ -142,6 +159,15 @@ class GameEngine:
         pygame.draw.rect(screen, (45, 50, 60), stamina_bg, border_radius=6)
         bar_color = (60, 210, 100) if self.stamina > 25 else (220, 60, 60)
         pygame.draw.rect(screen, bar_color, stamina_fill, border_radius=6)
+
+        # Task 3: flashing red bar + EXHAUSTED! label while locked out
+        if self.exhausted:
+            flash_on = (pygame.time.get_ticks() // 150) % 2 == 0
+            if flash_on:
+                pygame.draw.rect(screen, (255, 40, 40), stamina_bg, width=3, border_radius=6)
+                pygame.draw.rect(screen, (255, 40, 40), stamina_fill, border_radius=6)
+            warn = self.font_med.render("EXHAUSTED!", True, (255, 70, 70))
+            screen.blit(warn, (400, 447))
 
         if self.game_state == "GAME_OVER":
             overlay = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
